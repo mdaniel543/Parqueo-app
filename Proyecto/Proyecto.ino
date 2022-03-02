@@ -6,19 +6,19 @@
 
 // Configuración del teclado
 const byte FILAS = 4;     // Filas
-const byte COLUMNAS = 3;  // Columnas
+const byte COLUMNAS = 4;  // Columnas
 
 // Matriz de las teclas
 char teclas[FILAS][COLUMNAS] = {
-    {'1', '2', '3'}, {'4', '5', '6'}, {'7', '8', '9'}, {'*', '0', '#'}};
+    {'1', '2', '3','A'}, {'4', '5', '6','B'}, {'7', '8', '9','C'}, {'*', '0', '#','D'}};
 
 // Asignación de las teclas a los pines de arduino
-byte filaPines[FILAS] = {25, 26, 27, 28};
-byte columnaPines[COLUMNAS] = {22, 23, 24};
-String clave = "202104";
+byte filaPines[FILAS] = {26, 27, 28, 29};
+byte columnaPines[COLUMNAS] = {22, 23, 24, 25};
+String clave = "1234";
+String usuario= "admin";
 // Instancia teclado
-Keypad teclado =
-Keypad(makeKeymap(teclas), filaPines, columnaPines, FILAS, COLUMNAS);
+Keypad teclado = Keypad(makeKeymap(teclas), filaPines, columnaPines, FILAS, COLUMNAS);
 
 LiquidCrystal lcd(7, 6, 5, 4, 3, 2);
 String contrasena = "";
@@ -55,7 +55,7 @@ void seguridad() {
         }
         if(tecla!='*'){
         contrasena += tecla;
-        lcd.print("*");
+        lcd.print(tecla);
         digitosIngresados++;
         }
     }
