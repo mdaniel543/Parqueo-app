@@ -72,6 +72,7 @@ void setup() {
   pinMode(led, OUTPUT);
 }
 
+int ya = false;
 void loop() {
   // put your main code here, to run repeatedly:
   /*if (tenSeconds == 11) {
@@ -99,10 +100,9 @@ void loop() {
       digitalWrite(led, LOW);
       Serial.println("Apago");
     }
-    if (entrada == 'l') {
+    if (entrada == 'h') {
       lcd.clear();
-      Serial.println('f');
-      Serial1.println('f');
+      ya = true;
       generarToken();
     }
   }
@@ -200,8 +200,8 @@ void generarToken() {
     r = random(65, 68);
     tokenConexion += char(r);
   }
-  Serial.println(2);
-  Serial1.println(2);
+  Serial.println(tokenConexion);
+  Serial1.println(tokenConexion);
   lcd.setCursor(0, 0);
   lcd.print("Codigo...");
   lcd.setCursor(0, 1);
