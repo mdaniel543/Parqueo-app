@@ -17,6 +17,8 @@ byte candado[] = {
 
 int tenSeconds;
 int buz = 13;
+int led = 10;
+char entrada;
 
 /******** teclado ***********/
 const byte FILAS = 4;     // Filas
@@ -59,7 +61,7 @@ void setup() {
   lcd.setCursor(1, 1);
   lcd.print("Grupo5-SeccionA");
   Serial.begin(9600);
-
+  Serial1.begin(9600);
   tenSeconds = -1;
   tokenConexion = "";
   tokenIngresado = "";
@@ -67,25 +69,43 @@ void setup() {
   d = 0;
   intentosToken = 0;
   pinMode(buz, OUTPUT);
+  pinMode(led, OUTPUT);
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
-  delay(10);
-  if (tenSeconds == 11) {
+  /*if (tenSeconds == 11) {
     conectarse();
-  } else if (tenSeconds == 10) {
+    } else if (tenSeconds == 10) {
     delay(1000);
     lcd.clear();
     generarToken();
     tenSeconds++;
-  } else if (tenSeconds == 12) {
+    } else if (tenSeconds == 12) {
     lcd.clear();
-  } else {
+    } else {
     tenSeconds++;
     delay(1000);
-  }
+    }*/
 
+
+  if (Serial.available() > 0) {
+    entrada = Serial.read();
+    if (entrada == 'A') {
+      digitalWrite(led, HIGH);
+      Serial.println("Enciendo");
+    }
+    if (entrada == 'B') {
+      digitalWrite(led, LOW);
+      Serial.println("Apago");
+    }
+    if (entrada == 'l') {
+      lcd.clear();
+      Serial.println('f');
+      Serial1.println('f');
+      generarToken();
+    }
+  }
 }
 
 void conectarse() {
@@ -180,7 +200,8 @@ void generarToken() {
     r = random(65, 68);
     tokenConexion += char(r);
   }
-  Serial.println(tokenConexion);
+  Serial.println(2);
+  Serial1.println(2);
   lcd.setCursor(0, 0);
   lcd.print("Codigo...");
   lcd.setCursor(0, 1);
