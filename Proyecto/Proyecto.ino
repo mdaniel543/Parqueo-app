@@ -43,7 +43,6 @@ int digitosIngresados = 0;
 /***TOKEN**///
 String tokenConexion;
 String tokenIngresado;
-int d;
 int intentosToken;
 
 void setup() {
@@ -66,128 +65,116 @@ void setup() {
   tokenConexion = "";
   tokenIngresado = "";
   randomSeed(analogRead(A0));
-  d = 0;
   intentosToken = 0;
   pinMode(buz, OUTPUT);
   pinMode(led, OUTPUT);
 }
 
-int ya = false;
 void loop() {
-  // put your main code here, to run repeatedly:
-  /*if (tenSeconds == 11) {
-    conectarse();
-    } else if (tenSeconds == 10) {
+  if (tenSeconds == 11) {
+    lcd.setCursor(0, 0);
+    lcd.print("Esperando");
+    lcd.setCursor(0, 1);
+    lcd.print("Conexion");
+    if (Serial.available() > 0) {
+      entrada = Serial.read();
+      if (entrada == 'C') {
+        lcd.clear();
+        lcd.setCursor(0, 0);
+        lcd.print("Conectado");
+        tenSeconds++;
+      }
+    }
+  } else if (tenSeconds == 10) {
     delay(1000);
     lcd.clear();
-    generarToken();
     tenSeconds++;
-    } else if (tenSeconds == 12) {
-    lcd.clear();
-    } else {
+  } else if (tenSeconds == 12) {
+    if (Serial.available() > 0) {
+      if (entrada == 'h') {
+        lcd.clear();
+        digitalWrite(buz, LOW);
+        generarToken();
+        conectarse();
+      }else if(entrada == 'u'){
+        tokenConexion = "";
+        tokenIngresado = "";
+        intentosToken = 0;
+        tenSeconds = 11;
+        delay(5000);
+      }
+    }
+  }
+  else if (tenSeconds == 13) {
+    if (Serial.available() > 0) {
+      if (entrada == 'n') {
+        lcd.clear();
+        sesionIniciada();
+      }
+    }
+  } else if (tenSeconds < 10) {
     tenSeconds++;
     delay(1000);
-    }*/
-
-
-  if (Serial.available() > 0) {
-    entrada = Serial.read();
-    if (entrada == 'A') {
-      digitalWrite(led, HIGH);
-      Serial.println("Enciendo");
-    }
-    if (entrada == 'B') {
-      digitalWrite(led, LOW);
-      Serial.println("Apago");
-    }
-    if (entrada == 'h') {
-      lcd.clear();
-      ya = true;
-      generarToken();
-    }
   }
 }
 
 void conectarse() {
-  char tecla = teclado.getKey();
-  if (tecla) {
-    if (tecla == '*') {
-      if (tokenIngresado == tokenConexion) {
-        lcd.clear();
-        lcd.setCursor(0, 0);
-        lcd.print("Ingreso");
-        lcd.setCursor(0, 1);
-        lcd.print("Correctamente");
-        intentosToken = 0;
-        tokenIngresado = "";
-        login();
-      } else {
-        intentosToken++;
-        if (intentosToken == 3) {
-          lcd.setCursor(0, 0);
-          lcd.print("Ingreso");
-          lcd.setCursor(0, 1);
-          lcd.print("Bloqueado");
-          digitalWrite(buz, HIGH);
-          delay(2000);
-          ingresarNuevo();
-        } else {
-          lcd.setCursor(0, 0);
-          lcd.print("Ingreso");
-          lcd.setCursor(0, 1);
-          lcd.print("Incorrecto");
-          delay(5000);
-          lcd.setCursor(0, 1);
-          lcd.print("          ");
-          tokenIngresado = "";
-          lcd.setCursor(0, 0);
-          lcd.print("Codigo...");
-          lcd.setCursor(0, 1);
-          delay(15);
-        }
-      }
-    } else if (tecla == '#') {
-      lcd.clear();
-      lcd.setCursor(0, 0);
-      lcd.print("Ingreso");
-      lcd.setCursor(0, 1);
-      lcd.print("Cancelado");
-      digitalWrite(buz, HIGH);
-      delay(2000);
-      ingresarNuevo();
-    }
-    else {
-      tokenIngresado += tecla;
-      lcd.print(tecla);
-    }
-  }
-}
-
-void ingresarNuevo() {
-  lcd.setCursor(0, 0);
-  lcd.print("Generar nuevo");
-  lcd.setCursor(0, 1);
-  lcd.print("token? 1.Si 2.No");
   bool escuchar = true;
   while (escuchar) {
     char tecla = teclado.getKey();
     if (tecla) {
-      if (tecla == '1') {
+      if (tecla == '*') {
+        if (tokenIngresado == tokenConexion) {
+          lcd.clear();
+          lcd.setCursor(0, 0);
+          lcd.print("Ingreso");
+          lcd.setCursor(0, 1);
+          lcd.print("Correctamente");
+          intentosToken = 0;
+          tokenIngresado = "";
+          escuchar = false;
+          Serial.println('V');
+          Serial1.println('V');
+          tenSeconds++;
+        } else {
+          intentosToken++;
+          if (intentosToken == 3) {
+            lcd.setCursor(0, 0);
+            lcd.print("Ingreso");
+            lcd.setCursor(0, 1);
+            lcd.print("Bloqueado");
+            digitalWrite(buz, HIGH);
+            delay(8000);
+            escuchar = false;
+          } else {
+            lcd.setCursor(0, 0);
+            lcd.print("Ingreso");
+            lcd.setCursor(0, 1);
+            lcd.print("Incorrecto");
+            delay(8000);
+            lcd.clear();
+            tokenIngresado = "";
+            lcd.setCursor(0, 0);
+            lcd.print("Codigo...");
+            lcd.setCursor(0, 1);
+            delay(15);
+          }
+        }
+      } else if (tecla == '#') {
         lcd.clear();
-        tokenConexion = "";
-        intentosToken = 0;
-        digitalWrite(buz, LOW);
-        delay(15);
-        escuchar = false;
-      } else if (tecla == '2') {
-        tenSeconds = 12;
-        digitalWrite(buz, LOW);
+        lcd.setCursor(0, 0);
+        lcd.print("Ingreso");
+        lcd.setCursor(0, 1);
+        lcd.print("Cancelado");
+        digitalWrite(buz, HIGH);
+        delay(8000);
         escuchar = false;
       }
+      else {
+        tokenIngresado += tecla;
+        lcd.print(tecla);
+      }
     }
-  }
-  if (!escuchar and tenSeconds != 12) {
-    generarToken();
   }
 }
 
@@ -207,10 +194,13 @@ void generarToken() {
   lcd.setCursor(0, 1);
 }
 
-void login() {
+void sesionIniciada() {
 
 }
 
+void login() {
+
+}
 
 void seguridad() {
   char tecla = teclado.getKey();
