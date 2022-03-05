@@ -74,10 +74,27 @@ void setup() {
   intentosToken = 0;
   pinMode(buz, OUTPUT);
   pinMode(led, OUTPUT);
-  
-  for(int i = 0; i < 1024; i++){
-    if(255 == EEPROM.read(i)) punteroEE = i; 
+
+  /*byte dato;
+    for (int direccion = 0; direccion < 1024; direccion++) {
+    dato = EEPROM.read(direccion);
+    Serial1.print(direccion);
+    Serial1.print(" = ");
+    Serial1.print(dato);
+    Serial1.println();
+    }*/
+
+  /*for (int i = 0; i <= 50; i++) {
+    EEPROM.write(i, 255); /// para resetear la eeprom
+    }*/
+
+  for (int i = 16; i < 1024; i++) { /// para reconocer el puntero de la eeprom dejando los 16 espacios
+    if (255 == EEPROM.read(i)) {
+      punteroEE = i;
+      break;
+    }
   }
+
   Serial1.println(punteroEE);
 }
 
@@ -103,11 +120,14 @@ void loop() {
   } else if (tenSeconds == 12) { /// va esperar el login o regristrar
     if (Serial.available() > 0) {
       entrada = Serial.read();
+      Serial1.println(entrada);
       if (entrada == 'l') { // login
         lcd.clear();
+        delay(10);
         login();
       } else if (entrada == 'r') { // registro
         lcd.clear();
+        delay(10);
         registro();
       }
     }
@@ -115,52 +135,209 @@ void loop() {
     if (Serial.available() > 0) {
       entrada = Serial.read();
       if (entrada == 'h') {  /// va verificar el token de ingreso de nuevo (Porque cuando se logueo ya se mando un token)
+        lcd.clear();
         digitalWrite(buz, LOW);
         tokenConexion = "";
         tokenIngresado = "";
         intentosToken = 0;
         generarToken();
+        delay(10);
         conectarse();
-      } else if (entrada == 'a') { // apartar el estacionamiento
+      } else if (entrada == 'u') { /// salida
+        lcd.clear();
+        lcd.setCursor(0, 0);
+        lcd.print("Salida");
+        lcd.setCursor(0, 1);
+        lcd.print("con Exito");
+        tenSeconds = 12;
+        delay(2000);
+      }
+    }
+  } else if (tenSeconds == 14) { // cuando ya ingreso
+    if (Serial.available() > 0) {
+      entrada = Serial.read();
+      if (entrada == 'a') { // apartar el estacionamiento
 
       } else if (entrada == 'p') { /// ocupar el estacionamiento
 
       }
       else if (entrada == 'u') { /// salida
-        tenSeconds = 11;
+        tenSeconds = 12;
+        lcd.clear();
+        lcd.setCursor(0, 0);
+        lcd.print("Salida");
+        lcd.setCursor(0, 1);
+        lcd.print("con Exito");
         delay(2000);
       }
     }
+
   }
   else if (tenSeconds < 10) { /// solo es un contador
     tenSeconds++;
-    delay(1000);
+    delay(10);// despues se agrega el 1000
   }
 }
 
-
-
 void registro() {
+  char aux;
   String cadena;
-  while(Serial.available()){
-    entrada = Serial.read();
-    cadena += entrada;
-    if(entrada == '*'){
-      
-      StringToEEPROM(cadena);
+  bool existe = true;
+  bool pas_us = true;
+  int inservible = 0;
+  while (Serial.available()) {
+    aux = Serial.read();
+    if (existe) {
+      cadena += aux;
+      if (aux == '*') {
+        if (pas_us) {
+          if (existeUsuario(cadena, inservible)) {
+            existe = false;
+          } else { // creo un nuevo usuario
+            EEPROM.write(punteroEE, 1);//numero de veces que ingreso
+            punteroEE++;
+            EEPROM.write(punteroEE, 0);//numero de parqueo por el momento 0
+            punteroEE++;
+            EEPROM.put(punteroEE, '~');// inico de nombre de usuario
+            punteroEE++;
+            StringToEEPROM(cadena);
+            cadena = "";
+            pas_us = false;
+          }
+        } else {
+          StringToEEPROM(cadena);
+        }
+      }
     }
+  }
+  if (existe) {
+    Serial.print("b");
+    Serial1.println("bien");
+    lcd.setCursor(0, 0);
+    lcd.print("Registro");
+    lcd.setCursor(0, 1);
+    lcd.print("Exitoso");
+    tenSeconds++;
+  }
+  else {
+    Serial.print("m");
+    Serial1.println("mal");
+    lcd.setCursor(0, 0);
+    lcd.print("Registro");
+    lcd.setCursor(0, 1);
+    lcd.print("Denegado");
   }
 }
 
 
 void login() {
-
+  char aux;
+  String cadena;
+  bool existe = true;
+  bool pas_us = true;
+  int miPuntero = 0;
+  while (Serial.available()) {
+    aux = Serial.read();
+    if (existe) {
+      cadena += aux;
+      if (aux == '*') {
+        if (pas_us) {
+          if (!existeUsuario(cadena, miPuntero)) {
+            existe = false;
+          } else {
+            pas_us = false;
+            delay(10);
+          }
+          cadena = "";
+        } else {
+          if (!suPass(cadena, miPuntero)) {
+            existe = false;
+          }
+        }
+      }
+    }
+  }
+  if (existe) {
+    Serial.print("b");
+    Serial1.println("bien");
+    lcd.setCursor(0, 0);
+    lcd.print("login");
+    lcd.setCursor(0, 1);
+    lcd.print("Exitoso");
+    tenSeconds++;
+  }
+  else {
+    Serial.print("m");
+    Serial1.println("mal");
+    lcd.setCursor(0, 0);
+    lcd.print("login");
+    lcd.setCursor(0, 1);
+    lcd.print("Denegado");
+  }
 }
 
 
-void verificarUsuario(){
-  
+bool existeUsuario(String user, int &puntero) {
+  String cadena;
+  char aux;
+  for (int i = 0; i < punteroEE; i++) {
+    if ('~' == char(EEPROM.read(i))) {
+      for (int j = i + 1; j < punteroEE; j++) {
+        aux = char(EEPROM.read(j));
+        cadena += aux;
+        if (aux == '*') {
+          Serial1.println(cadena);
+          Serial1.println(user);
+          break;
+        }
+      }
+      if (cadena == user) {
+        puntero = i + cadena.length() + 1; //seria de probar,si va el 1 o no
+        punteroIni = i - 2; // me coloco en el bit del usuario
+        return true;
+      }else {
+        cadena = "";
+      }
+    }
+  }
+  return false;
 }
+
+bool suPass(String pass, int indice) {
+  Serial1.println(pass);
+  Serial1.println(pass.length());
+  Serial1.println(indice);
+  String cadena;
+  char aux;
+  for (int i = indice; i < indice + pass.length(); i++) {
+    aux = char(EEPROM.read(i));
+    Serial1.println(aux);
+    cadena += aux;
+    if (aux == '*') {
+      Serial1.println(cadena);
+      if (cadena == pass)
+        return true;
+    }
+  }
+  return false;
+}
+
+void StringToEEPROM(String str) {
+  byte len = str.length();
+  for (int i = 0; i < len; i++)
+    EEPROM.write(punteroEE + i, str[i]);
+  punteroEE = punteroEE + len;
+}
+
+String readStringFromEEPROM(int offset) {
+  int len = EEPROM.read(offset);
+  int i;
+  char data[len + 1];
+  for (i = 0; i < punteroEE; i++)
+    data[i] = EEPROM.read(offset + i);
+  return String(data);
+}
+
 
 void generarToken() {
   int r;
@@ -182,6 +359,19 @@ void generarToken() {
 void conectarse() {
   bool escuchar = true;
   while (escuchar) {
+    if (Serial.available() > 0) {
+      entrada = Serial.read();
+      if (entrada == 'u') { /// salida
+        tenSeconds = 12;
+        lcd.clear();
+        lcd.setCursor(0, 0);
+        lcd.print("Salida");
+        lcd.setCursor(0, 1);
+        lcd.print("con Exito");
+        delay(2000);
+        escuchar = false;
+      }
+    }
     char tecla = teclado.getKey();
     if (tecla) {
       if (tecla == '*') {
@@ -194,7 +384,7 @@ void conectarse() {
           intentosToken = 0;
           tokenIngresado = "";
           escuchar = false;
-          Serial.println("correcto");
+          Serial.print("correcto");
           tenSeconds++;
         } else {
           intentosToken++;
@@ -203,16 +393,15 @@ void conectarse() {
             lcd.print("Ingreso");
             lcd.setCursor(0, 1);
             lcd.print("Bloqueado");
-            Serial.println("bloqueado");
+            Serial.print("bloqueado");
             digitalWrite(buz, HIGH);
-            delay(5000);
             escuchar = false;
           } else {
             lcd.setCursor(0, 0);
             lcd.print("Ingreso");
             lcd.setCursor(0, 1);
             lcd.print("Incorrecto");
-            Serial.println("incorrecto");
+            Serial.print("incorrecto");
             delay(8000);
             lcd.clear();
             tokenIngresado = "";
@@ -228,9 +417,8 @@ void conectarse() {
         lcd.print("Ingreso");
         lcd.setCursor(0, 1);
         lcd.print("Cancelado");
-        Serial.println("cancelado");
+        Serial.print("cancelado");
         digitalWrite(buz, HIGH);
-        delay(5000);
         escuchar = false;
       }
       else {
@@ -239,20 +427,4 @@ void conectarse() {
       }
     }
   }
-}
-
-void StringToEEPROM(String str) {
-  byte len = str.length();
-  for (int i = 0; i < len; i++)
-    EEPROM.write(punteroEE + i, str[i]);
-  punteroEE = punteroEE + len + 1;
-}
-
-String readStringFromEEPROM(int offset) {
-  int len = EEPROM.read(offset);
-  int i;
-  char data[len + 1];
-  for (i = 0; i < punteroEE; i++)
-    data[i] = EEPROM.read(offset + i);
-  return String(data);
 }
