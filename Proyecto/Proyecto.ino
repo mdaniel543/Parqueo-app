@@ -1,6 +1,6 @@
+#include <EEPROM.h>
 #include <LiquidCrystal.h>
 #include <Keypad.h>
-
 LiquidCrystal lcd(7, 6, 5, 4, 3, 2);
 
 
@@ -45,6 +45,12 @@ String tokenConexion;
 String tokenIngresado;
 int intentosToken;
 
+
+/*****EEPROM******/
+
+int punteroEE; /// donde va la memoria eeprom
+int punteroIni; // se logueo y donde esta en la eeprom
+
 void setup() {
   // put your setup code here, to run once:
   lcd.begin(16, 2); //16 Columnas 2 filas
@@ -68,10 +74,15 @@ void setup() {
   intentosToken = 0;
   pinMode(buz, OUTPUT);
   pinMode(led, OUTPUT);
+  
+  for(int i = 0; i < 1024; i++){
+    if(255 == EEPROM.read(i)) punteroEE = i; 
+  }
+  Serial1.println(punteroEE);
 }
 
 void loop() {
-  if (tenSeconds == 11) {
+  if (tenSeconds == 11) { ///// Esperando Conexion
     lcd.setCursor(0, 0);
     lcd.print("Esperando");
     lcd.setCursor(0, 1);
@@ -85,97 +96,70 @@ void loop() {
         tenSeconds++;
       }
     }
-  } else if (tenSeconds == 10) {
+  } else if (tenSeconds == 10) { /// solo me limpia la pantalla una vez
     delay(1000);
     lcd.clear();
     tenSeconds++;
-  } else if (tenSeconds == 12) {
+  } else if (tenSeconds == 12) { /// va esperar el login o regristrar
     if (Serial.available() > 0) {
-      if (entrada == 'h') {
+      entrada = Serial.read();
+      if (entrada == 'l') { // login
         lcd.clear();
+        login();
+      } else if (entrada == 'r') { // registro
+        lcd.clear();
+        registro();
+      }
+    }
+  } else if (tenSeconds == 13) {  /// ya entro con su usuario
+    if (Serial.available() > 0) {
+      entrada = Serial.read();
+      if (entrada == 'h') {  /// va verificar el token de ingreso de nuevo (Porque cuando se logueo ya se mando un token)
         digitalWrite(buz, LOW);
-        generarToken();
-        conectarse();
-      }else if(entrada == 'u'){
         tokenConexion = "";
         tokenIngresado = "";
         intentosToken = 0;
+        generarToken();
+        conectarse();
+      } else if (entrada == 'a') { // apartar el estacionamiento
+
+      } else if (entrada == 'p') { /// ocupar el estacionamiento
+
+      }
+      else if (entrada == 'u') { /// salida
         tenSeconds = 11;
-        delay(5000);
+        delay(2000);
       }
     }
   }
-  else if (tenSeconds == 13) {
-    if (Serial.available() > 0) {
-      if (entrada == 'n') {
-        lcd.clear();
-        sesionIniciada();
-      }
-    }
-  } else if (tenSeconds < 10) {
+  else if (tenSeconds < 10) { /// solo es un contador
     tenSeconds++;
     delay(1000);
   }
 }
 
-void conectarse() {
-  bool escuchar = true;
-  while (escuchar) {
-    char tecla = teclado.getKey();
-    if (tecla) {
-      if (tecla == '*') {
-        if (tokenIngresado == tokenConexion) {
-          lcd.clear();
-          lcd.setCursor(0, 0);
-          lcd.print("Ingreso");
-          lcd.setCursor(0, 1);
-          lcd.print("Correctamente");
-          intentosToken = 0;
-          tokenIngresado = "";
-          escuchar = false;
-          Serial.println('V');
-          Serial1.println('V');
-          tenSeconds++;
-        } else {
-          intentosToken++;
-          if (intentosToken == 3) {
-            lcd.setCursor(0, 0);
-            lcd.print("Ingreso");
-            lcd.setCursor(0, 1);
-            lcd.print("Bloqueado");
-            digitalWrite(buz, HIGH);
-            delay(8000);
-            escuchar = false;
-          } else {
-            lcd.setCursor(0, 0);
-            lcd.print("Ingreso");
-            lcd.setCursor(0, 1);
-            lcd.print("Incorrecto");
-            delay(8000);
-            lcd.clear();
-            tokenIngresado = "";
-            lcd.setCursor(0, 0);
-            lcd.print("Codigo...");
-            lcd.setCursor(0, 1);
-            delay(15);
-          }
-        }
-      } else if (tecla == '#') {
-        lcd.clear();
-        lcd.setCursor(0, 0);
-        lcd.print("Ingreso");
-        lcd.setCursor(0, 1);
-        lcd.print("Cancelado");
-        digitalWrite(buz, HIGH);
-        delay(8000);
-        escuchar = false;
-      }
-      else {
-        tokenIngresado += tecla;
-        lcd.print(tecla);
-      }
+
+
+void registro() {
+  String cadena;
+  while(Serial.available()){
+    entrada = Serial.read();
+    cadena += entrada;
+    if(entrada == '*'){
+      
+      StringToEEPROM(cadena);
     }
   }
+}
+
+
+void login() {
+
+}
+
+
+void verificarUsuario(){
+  
 }
 
 void generarToken() {
@@ -194,86 +178,81 @@ void generarToken() {
   lcd.setCursor(0, 1);
 }
 
-void sesionIniciada() {
 
-}
-
-void login() {
-
-}
-
-void seguridad() {
-  char tecla = teclado.getKey();
-  if (tecla) {
-    if (estadoIngre == 0) {
-      if (contrasena.length() < 1) {
-        lcd.clear();
-        lcd.setCursor(0, 0);
-        lcd.print("Usuario");
-        lcd.setCursor(0, 1);
-      }
-      if (tecla != '*') {
-        contrasena += tecla;
-        lcd.print(tecla);
-        digitosIngresados++;
-        delay(15);
-      } else {
-        usuTempo = contrasena;
-        contrasena = "";
-        estadoIngre = 1;
-        delay(15);
-        lcd.clear();
-        lcd.setCursor(0, 0);
-        lcd.print("Codigo");
-        lcd.setCursor(0, 1);
-      }
-    } else {
-      if (contrasena.length() < 1) {
-        lcd.clear();
-        lcd.setCursor(0, 0);
-        lcd.print("Codigo");
-        lcd.setCursor(0, 1);
-      }
-      if (tecla != '*') {
-        contrasena += tecla;
-        lcd.print('*');
-        digitosIngresados++;
-        delay(15);
-        estadoIngre = 3;
-      } else {
-        if (clave == contrasena) {  // correcto
-          contrasena = "";
+void conectarse() {
+  bool escuchar = true;
+  while (escuchar) {
+    char tecla = teclado.getKey();
+    if (tecla) {
+      if (tecla == '*') {
+        if (tokenIngresado == tokenConexion) {
           lcd.clear();
           lcd.setCursor(0, 0);
-          lcd.print("BIENVENIDO");
+          lcd.print("Ingreso");
           lcd.setCursor(0, 1);
-          lcd.print("AL PARQUEO");
-          contrasena = "";
-          delay(200);
-          //etapa2 = 1;
-        } else {  // incorrecto
-          contrasena = "";
-          lcd.clear();
-          lcd.setCursor(0, 0);
-          lcd.print("ERROR en Contrasena");
-          lcd.setCursor(2, 1);
-          contrasena = "";
+          lcd.print("Correctamente");
+          intentosToken = 0;
+          tokenIngresado = "";
+          escuchar = false;
+          Serial.println("correcto");
+          tenSeconds++;
+        } else {
+          intentosToken++;
+          if (intentosToken == 3) {
+            lcd.setCursor(0, 0);
+            lcd.print("Ingreso");
+            lcd.setCursor(0, 1);
+            lcd.print("Bloqueado");
+            Serial.println("bloqueado");
+            digitalWrite(buz, HIGH);
+            delay(5000);
+            escuchar = false;
+          } else {
+            lcd.setCursor(0, 0);
+            lcd.print("Ingreso");
+            lcd.setCursor(0, 1);
+            lcd.print("Incorrecto");
+            Serial.println("incorrecto");
+            delay(8000);
+            lcd.clear();
+            tokenIngresado = "";
+            lcd.setCursor(0, 0);
+            lcd.print("Codigo...");
+            lcd.setCursor(0, 1);
+            delay(15);
+          }
         }
-        contrasena = "";
-        digitosIngresados = 0;
-        estadoIngre = 0;
-        delay(100);
+      } else if (tecla == '#') {
+        lcd.clear();
+        lcd.setCursor(0, 0);
+        lcd.print("Ingreso");
+        lcd.setCursor(0, 1);
+        lcd.print("Cancelado");
+        Serial.println("cancelado");
+        digitalWrite(buz, HIGH);
+        delay(5000);
+        escuchar = false;
+      }
+      else {
+        tokenIngresado += tecla;
+        lcd.print(tecla);
       }
     }
   }
-  if (tecla == '#') {
-    lcd.clear();
-    lcd.setCursor(2, 0);  //Set cursor to character 2 on line 0
-    lcd.print("CASA ACYE1");
-    lcd.setCursor(2, 1);  //Move cursor to character 2 on line 1
-    lcd.print("A-G4-S2");
-    estadoIngre = 0;
-    contrasena = "";
-    delay(20);
-  }
+}
+
+void StringToEEPROM(String str) {
+  byte len = str.length();
+  for (int i = 0; i < len; i++)
+    EEPROM.write(punteroEE + i, str[i]);
+  punteroEE = punteroEE + len + 1;
+}
+
+String readStringFromEEPROM(int offset) {
+  int len = EEPROM.read(offset);
+  int i;
+  char data[len + 1];
+  for (i = 0; i < punteroEE; i++)
+    data[i] = EEPROM.read(offset + i);
+  return String(data);
 }
