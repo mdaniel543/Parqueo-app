@@ -53,6 +53,7 @@ int intentosToken;
 
 int punteroEE; /// donde va la memoria EEProm
 int punteroIni; // se logueo y donde esta en la EEProm
+bool parqueado;
 
 void setup() {
   // put your setup code here, to run once:
@@ -77,7 +78,7 @@ void setup() {
   intentosToken = 0;
   pinMode(buz, OUTPUT);
   pinMode(led, OUTPUT);
-
+  parqueado = false;
 
   /*byte dato;
     for (int direccion = 0; direccion < 1024; direccion++) {
@@ -92,17 +93,18 @@ void setup() {
     EEPROM.write(i, 255); /// para resetear la EEProm
     }*/
 
-  /*for (int i = 0; i <= 15; i++) {
+  for (int i = 0; i <= 15; i++) {
     EEPROM.write(i, 0); /// para resetear la EEProm
   }
 
   for (int i = 16; i <= 100; i++) {
     EEPROM.write(i, 255); /// para resetear la EEProm
-  }*/
-
+  }
   mc.shutdown(0, false);
   mc.setIntensity(0, 15);
   mc.clearDisplay(0);
+
+  actualizarMatrix();
 
   for (int i = 16; i < 1024; i++) { /// para reconocer el puntero de la EEProm dejando los 16 espacios
     if (255 == EEPROM.read(i)) {
@@ -173,9 +175,11 @@ void loop() {
     if (Serial.available() > 0) {
       entrada = Serial.read();
       if (entrada == 'a') { // apartar el estacionamiento
-
+        reservar();
+        delay(15);
       } else if (entrada == 'p') { /// ocupar el estacionamiento
-
+        parquearCarro();
+        delay(15);
       }
       else if (entrada == 'u') { /// salida
         tenSeconds = 12;
@@ -184,6 +188,11 @@ void loop() {
         lcd.print("Salida");
         lcd.setCursor(0, 1);
         lcd.print("con Exito");
+        if (parqueado) {
+          EEPROM.write(EEPROM.read(punteroIni + 1), 0);
+          EEPROM.write(punteroIni + 1, 0);
+          revisarLeds();
+        }
         delay(2000);
       }
     }
@@ -194,6 +203,8 @@ void loop() {
   }
 
 }
+
+
 
 void registro() {
   char aux;
@@ -373,7 +384,7 @@ void generarToken() {
     r = random(65, 68);
     tokenConexion += char(r);
   }
-  Serial.println(tokenConexion);
+  Serial.print(tokenConexion);
   Serial1.println(tokenConexion);
   lcd.setCursor(0, 0);
   lcd.print("Codigo...");
@@ -411,8 +422,8 @@ void conectarse() {
           escuchar = false;
           Serial.print("correcto");
           tenSeconds++;
-          delay(1000);
-          Serial.print(EEPROM.read(punteroIni + 1));
+          delay(1500);
+          //Serial.print((String)EEPROM.read(punteroIni + 1));
         } else {
           intentosToken++;
           if (intentosToken == 3) {
@@ -457,22 +468,80 @@ void conectarse() {
 }
 
 void parquearCarro() {
-  boolean vacio = false;
+  bool vacio = false;
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Parqueando...");
+  int temp =  EEPROM.read(punteroIni + 1);
+  if (temp != 0) {
+    Serial.print(temp);
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Parqueado en ");
+    lcd.setCursor(0, 1);
+    lcd.print("Reservado: ");
+    lcd.setCursor(11, 1);
+    lcd.print(temp);
+    return;
+  }
   for (int x = 0; x < 16; x++) {
     if ( EEPROM.read(x) == 0) {
       vacio = true;
       break;
     }
   }
-
   if (vacio) {
-
+    parqueado = true;
     int regreso = revisarLeds();
-    Serial1.println(regreso);
+    int suma = regreso + 1;
+    String envio = (String)suma;
+    Serial1.println(regreso + 1);
+    EEPROM.write(regreso, 1);
+    EEPROM.write(punteroIni + 1, suma);
+    Serial.print(envio);
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Parqueado en");
+    lcd.setCursor(7, 1);
+    lcd.print(envio);
   } else {
     //No hay espacios vacios
     Serial1.println("Vacio");
+    Serial.print("no");
   }
+  actualizarMatrix();
+}
+
+void reservar() {
+  bool vacio = false;
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Reservando...");
+  int x;
+  for (x = 0; x < 16; x++) {
+    if (EEPROM.read(x) == 0) {
+      vacio = true;
+      break;
+    }
+  }
+  if (vacio) {
+    int suma = x + 1;
+    String envio = (String)suma;
+    Serial1.println(x + 1);
+    EEPROM.write(x, 1);
+    EEPROM.write(punteroIni + 1, suma);
+    Serial.print(envio);
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Reservado en");
+    lcd.setCursor(7, 1);
+    lcd.print(envio);
+  } else {
+    //No hay espacios vacios
+    Serial1.println("Vacio");
+    Serial.print("no");
+  }
+  actualizarMatrix();
 }
 
 int revisarLeds() {
@@ -691,15 +760,19 @@ int revisarLeds() {
       }
     }
   }
+  return retorno;
+}
+
+
+void actualizarMatrix() {
   for (int i = 0 ; i < 8; i++) {
-    if (vector2[i]) {
+    if (1 == EEPROM.read(i)) {
       mc.setLed(0, 0, i, true);
     }
   }
   for (int i = 8 ; i < 16; i++) {
-    if (vector2[i]) {
-      mc.setLed(0, 1, i, true);
+    if (1 == EEPROM.read(i)) {
+      mc.setLed(0, 1, i - 8, true);
     }
   }
-  return retorno;
 }
