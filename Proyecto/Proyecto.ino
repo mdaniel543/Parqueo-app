@@ -189,7 +189,7 @@ void loop() {
         lcd.setCursor(0, 1);
         lcd.print("con Exito");
         if (parqueado) {
-          EEPROM.write(EEPROM.read(punteroIni + 1), 0);
+          EEPROM.write(EEPROM.read(punteroIni + 1) - 1, 0);
           EEPROM.write(punteroIni + 1, 0);
           revisarLeds();
         }
@@ -423,7 +423,8 @@ void conectarse() {
           Serial.print("correcto");
           tenSeconds++;
           delay(1500);
-          //Serial.print((String)EEPROM.read(punteroIni + 1));
+          Serial.print(",");
+          Serial.print((String)EEPROM.read(punteroIni + 1));
         } else {
           intentosToken++;
           if (intentosToken == 3) {
@@ -432,6 +433,8 @@ void conectarse() {
             lcd.setCursor(0, 1);
             lcd.print("Bloqueado");
             Serial.print("bloqueado");
+            Serial.print(",");
+            Serial.print(0);
             digitalWrite(buz, HIGH);
             escuchar = false;
           } else {
@@ -440,6 +443,8 @@ void conectarse() {
             lcd.setCursor(0, 1);
             lcd.print("Incorrecto");
             Serial.print("incorrecto");
+            Serial.print(",");
+            Serial.print(0);
             delay(8000);
             lcd.clear();
             tokenIngresado = "";
@@ -456,6 +461,8 @@ void conectarse() {
         lcd.setCursor(0, 1);
         lcd.print("Cancelado");
         Serial.print("cancelado");
+        Serial.print(",");
+        Serial.print(0);
         digitalWrite(buz, HIGH);
         escuchar = false;
       }
@@ -517,6 +524,7 @@ void reservar() {
   lcd.clear();
   lcd.setCursor(0, 0);
   lcd.print("Reservando...");
+  delay(1000);
   int x;
   for (x = 0; x < 16; x++) {
     if (EEPROM.read(x) == 0) {
