@@ -92,6 +92,14 @@ void setup() {
     EEPROM.write(i, 255); /// para resetear la EEProm
     }*/
 
+  /*for (int i = 0; i <= 15; i++) {
+    EEPROM.write(i, 0); /// para resetear la EEProm
+  }
+
+  for (int i = 16; i <= 100; i++) {
+    EEPROM.write(i, 255); /// para resetear la EEProm
+  }*/
+
   mc.shutdown(0, false);
   mc.setIntensity(0, 15);
   mc.clearDisplay(0);
@@ -184,7 +192,7 @@ void loop() {
     tenSeconds++;
     delay(10);// despues se agrega el 1000
   }
- 
+
 }
 
 void registro() {
@@ -193,13 +201,16 @@ void registro() {
   bool existe = true;
   bool pas_us = true;
   int inservible = 0;
+  int limite = 0;
   while (Serial.available()) {
     aux = Serial.read();
     if (existe) {
+      limite ++;
       cadena += aux;
       if (aux == '*') {
         if (pas_us) {
-          if (existeUsuario(cadena, inservible)) {
+          if (limite > 8) existe = false;
+          else if (existeUsuario(cadena, inservible)) {
             existe = false;
           } else { // creo un nuevo usuario
             EEPROM.write(punteroEE, 1);//numero de veces que ingreso
@@ -211,9 +222,11 @@ void registro() {
             StringToEEPROM(cadena);
             cadena = "";
             pas_us = false;
+            limite = 0;
           }
         } else {
-          StringToEEPROM(cadena);
+          if (limite > 5) existe = false;
+          else StringToEEPROM(cadena);
         }
       }
     }
@@ -225,6 +238,7 @@ void registro() {
     lcd.print("Registro");
     lcd.setCursor(0, 1);
     lcd.print("Exitoso");
+    delay(2000);
     tenSeconds++;
   }
   else {
@@ -272,6 +286,9 @@ void login() {
     lcd.print("login");
     lcd.setCursor(0, 1);
     lcd.print("Exitoso");
+    delay(2000);
+    int t = EEPROM.read(punteroIni);
+    EEPROM.write(punteroIni, t + 1);
     tenSeconds++;
   }
   else {
@@ -288,7 +305,7 @@ void login() {
 bool existeUsuario(String user, int &puntero) {
   String cadena;
   char aux;
-  for (int i = 0; i < punteroEE; i++) {
+  for (int i = 16; i < punteroEE; i++) {
     if ('~' == char(EEPROM.read(i))) {
       for (int j = i + 1; j < punteroEE; j++) {
         aux = char(EEPROM.read(j));
@@ -341,7 +358,7 @@ String readStringFromEEPROM(int offset) {
   int len = EEPROM.read(offset);
   int i;
   char data[len + 1];
-  for (i = 0; i < punteroEE; i++)
+  for (i = 16; i < punteroEE; i++)
     data[i] = EEPROM.read(offset + i);
   return String(data);
 }
@@ -394,6 +411,8 @@ void conectarse() {
           escuchar = false;
           Serial.print("correcto");
           tenSeconds++;
+          delay(1000);
+          Serial.print(EEPROM.read(punteroIni + 1));
         } else {
           intentosToken++;
           if (intentosToken == 3) {
@@ -437,10 +456,30 @@ void conectarse() {
   }
 }
 
-void revisarLeds() {
+void parquearCarro() {
+  boolean vacio = false;
+  for (int x = 0; x < 16; x++) {
+    if ( EEPROM.read(x) == 0) {
+      vacio = true;
+      break;
+    }
+  }
+
+  if (vacio) {
+
+    int regreso = revisarLeds();
+    Serial1.println(regreso);
+  } else {
+    //No hay espacios vacios
+    Serial1.println("Vacio");
+  }
+}
+
+int revisarLeds() {
   bool aux = true;
   int vector1[16];
   int vector2[16];
+  int retorno = -1;
 
   LDR = analogRead(A0);
   LDR1 = analogRead(A1);
@@ -639,14 +678,15 @@ void revisarLeds() {
     }
     for (int i = 0 ; i < 16; i++) {
       /*Serial1.print(i);
-      Serial1.print(". ");
-      Serial1.println(vector2[i]);
-      Serial1.println("*********");
-      Serial1.print(i);
-      Serial1.print(". ");
-      Serial1.println(vector1[i]);*/
+        Serial1.print(". ");
+        Serial1.println(vector2[i]);
+        Serial1.println("*********");
+        Serial1.print(i);
+        Serial1.print(". ");
+        Serial1.println(vector1[i]);*/
       if (vector1[i] != vector2[i]) {
         aux = false;
+        retorno = i;
         break;
       }
     }
@@ -661,5 +701,5 @@ void revisarLeds() {
       mc.setLed(0, 1, i, true);
     }
   }
-  delay(5000);
+  return retorno;
 }
