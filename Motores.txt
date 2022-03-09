@@ -1,0 +1,108 @@
+
+/*
+  Creado: Luis del Valle (ldelvalleh@programarfacil.com
+  Movimiento normal motor  28BYJ-48
+  https://programarfacil.com
+*/
+
+// Definimos los pines donde tenemos conectadas las bobinas
+#define IN1  10
+#define IN2  11
+#define IN3  12
+#define IN4  13
+int contadorMotor1 = 0;
+int contadorMotor2 = 0;
+int estado = 0;
+int sp = 9;
+
+
+// Secuencia de pasos (par máximo)
+int paso [4][4] =
+{
+  {1, 1, 0, 0},
+  {0, 1, 1, 0},
+  {0, 0, 1, 1},
+  {1, 0, 0, 1}
+};
+
+void setup()
+{
+  // Todos los pines en modo salida
+  Serial.begin(9600);
+  pinMode(IN1, OUTPUT);
+  pinMode(IN2, OUTPUT);
+  pinMode(IN3, OUTPUT);
+  pinMode(IN4, OUTPUT);
+  pinMode(sp, INPUT);
+
+  pinMode(31, OUTPUT);
+  pinMode(32, OUTPUT);
+  pinMode(33, OUTPUT);
+  pinMode(34, OUTPUT);
+}
+
+
+
+void loop()
+{
+  
+  if (digitalRead(sp) == HIGH) {
+    estado = 1;
+    Serial.println("hola");
+  }
+  if (estado == 1) {
+    motor1();
+  } else if (estado == 2) {
+    delay(5000);
+    estado = 3;
+  } else if (estado == 3) {
+    motor2();
+  }
+}
+
+void motor1() {
+  for (int i = 0; i < 4; i++)
+  {
+    digitalWrite(IN1, paso[i][0]);
+    digitalWrite(IN2, paso[i][1]);
+    digitalWrite(IN3, paso[i][2]);
+    digitalWrite(IN4, paso[i][3]);
+    delay(500);
+    contadorMotor1++;
+    if (contadorMotor1 == 19) {
+      estado = 2;
+      contadorMotor1 = 0;
+    }
+  }
+}
+void motor2() {
+  
+  digitalWrite(31, LOW);
+  digitalWrite(32, LOW);
+  digitalWrite(33, LOW);
+  digitalWrite(34, HIGH);
+  delay(500);
+  contadorMotor2++;
+  digitalWrite(31, LOW);
+  digitalWrite(32, LOW);
+  digitalWrite(33, HIGH);
+  digitalWrite(34, LOW);
+  delay(500);
+  contadorMotor2++;
+  digitalWrite(31, LOW);
+  digitalWrite(32, HIGH);
+  digitalWrite(33, LOW);
+  digitalWrite(34, LOW);
+  delay(500);
+  contadorMotor2++;
+  digitalWrite(31, HIGH);
+  digitalWrite(32, LOW);
+  digitalWrite(33, LOW);
+  digitalWrite(34, LOW);
+  delay(500);
+  contadorMotor2++;
+  if(contadorMotor2 == 40){
+    estado =4;
+    contadorMotor2 = 0;
+  }
+}
