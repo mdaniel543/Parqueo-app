@@ -50,14 +50,7 @@ void loop()
     estado = 1;
     Serial.println("hola");
   }
-  if (estado == 1) {
-    motor1();
-  } else if (estado == 2) {
-    delay(5000);
-    estado = 3;
-  } else if (estado == 3) {
-    motor2();
-  }
+ 
 }
 
 void motor1() {
@@ -69,7 +62,7 @@ void motor1() {
     digitalWrite(IN4, paso[i][3]);
     delay(500);
     contadorMotor1++;
-    if (contadorMotor1 == 19) {
+    if (contadorMotor1 == 20) {
       estado = 2;
       contadorMotor1 = 0;
     }
@@ -101,7 +94,7 @@ void motor2() {
   digitalWrite(34, LOW);
   delay(500);
   contadorMotor2++;
-  if(contadorMotor2 == 40){
+  if(contadorMotor2 == 20){
     estado =4;
     contadorMotor2 = 0;
   }
