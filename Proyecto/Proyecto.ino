@@ -1,8 +1,11 @@
+#include <LedControl.h>
 #include <EEPROM.h>
 #include <LiquidCrystal.h>
 #include <Keypad.h>
 LiquidCrystal lcd(7, 6, 5, 4, 3, 2);
+LedControl mc = LedControl(51, 53, 52, 1);
 
+float LDR, LDR1, LDR2, LDR3, LDR4, LDR5, LDR6, LDR7, LDR8, LDR9, LDR10, LDR11, LDR12, LDR13, LDR14, LDR15;
 
 byte candado[] = {
   B00100,
@@ -48,8 +51,8 @@ int intentosToken;
 
 /*****EEPROM******/
 
-int punteroEE; /// donde va la memoria eeprom
-int punteroIni; // se logueo y donde esta en la eeprom
+int punteroEE; /// donde va la memoria EEProm
+int punteroIni; // se logueo y donde esta en la EEProm
 
 void setup() {
   // put your setup code here, to run once:
@@ -75,6 +78,7 @@ void setup() {
   pinMode(buz, OUTPUT);
   pinMode(led, OUTPUT);
 
+
   /*byte dato;
     for (int direccion = 0; direccion < 1024; direccion++) {
     dato = EEPROM.read(direccion);
@@ -85,10 +89,14 @@ void setup() {
     }*/
 
   /*for (int i = 0; i <= 50; i++) {
-    EEPROM.write(i, 255); /// para resetear la eeprom
+    EEPROM.write(i, 255); /// para resetear la EEProm
     }*/
 
-  for (int i = 16; i < 1024; i++) { /// para reconocer el puntero de la eeprom dejando los 16 espacios
+  mc.shutdown(0, false);
+  mc.setIntensity(0, 15);
+  mc.clearDisplay(0);
+
+  for (int i = 16; i < 1024; i++) { /// para reconocer el puntero de la EEProm dejando los 16 espacios
     if (255 == EEPROM.read(i)) {
       punteroEE = i;
       break;
@@ -171,12 +179,12 @@ void loop() {
         delay(2000);
       }
     }
-
   }
   else if (tenSeconds < 10) { /// solo es un contador
     tenSeconds++;
     delay(10);// despues se agrega el 1000
   }
+ 
 }
 
 void registro() {
@@ -295,7 +303,7 @@ bool existeUsuario(String user, int &puntero) {
         puntero = i + cadena.length() + 1; //seria de probar,si va el 1 o no
         punteroIni = i - 2; // me coloco en el bit del usuario
         return true;
-      }else {
+      } else {
         cadena = "";
       }
     }
@@ -427,4 +435,231 @@ void conectarse() {
       }
     }
   }
+}
+
+void revisarLeds() {
+  bool aux = true;
+  int vector1[16];
+  int vector2[16];
+
+  LDR = analogRead(A0);
+  LDR1 = analogRead(A1);
+  LDR2 = analogRead(A2);
+  LDR3 = analogRead(A3);
+  LDR4 = analogRead(A4);
+  LDR5 = analogRead(A5);
+  LDR6 = analogRead(A6);
+  LDR7 = analogRead(A7);
+  LDR8 = analogRead(A8);
+  LDR9 = analogRead(A9);
+  LDR10 = analogRead(A10);
+  LDR11 = analogRead(A11);
+  LDR12 = analogRead(A12);
+  LDR13 = analogRead(A13);
+  LDR14 = analogRead(A14);
+  LDR15 = analogRead(A15);
+
+  if (LDR < 600) {
+    vector1[0] = 1;
+  } else {
+    vector1[0] = 0;
+  }
+  if (LDR1 < 600) {
+    vector1[1] = 1;
+  } else {
+    vector1[1] = 0;
+  }
+  if (LDR2 < 600) {
+    vector1[2] = 1;
+  } else {
+    vector1[2] = 0;
+  }
+  if (LDR3 < 600) {
+    vector1[3] = 1;
+  } else {
+    vector1[3] = 0;
+  }
+  if (LDR4 < 600) {
+    vector1[4] = 1;
+  } else {
+    vector1[4] = 0;
+  }
+  if (LDR5 < 600) {
+    vector1[5] = 1;
+  } else {
+    vector1[5] = 0;
+  }
+  if (LDR6 < 600) {
+    vector1[6] = 1;
+  } else {
+    vector1[6] = 0;
+  }
+  if (LDR7 < 600) {
+    vector1[7] = 1;
+  } else {
+    vector1[7] = 0;
+  }
+  if (LDR8 < 600) {
+    vector1[8] = 1;
+  } else {
+    vector1[8] = 0;
+  }
+  if (LDR9 < 600) {
+    vector1[9] = 1;
+  } else {
+    vector1[9] = 0;
+  }
+  if (LDR10 < 600) {
+    vector1[10] = 1;
+  } else {
+    vector1[10] = 0;
+  }
+  if (LDR11 < 600) {
+    vector1[11] = 1;
+  } else {
+    vector1[11] = 0;
+  }
+  if (LDR12 < 600) {
+    vector1[12] = 1;
+  } else {
+    vector1[12] = 0;
+  }
+  if (LDR13 < 600) {
+    vector1[13] = 1;
+  } else {
+    vector1[13] = 0;
+  }
+  if (LDR14 < 600) {
+    vector1[14] = 1;
+  } else {
+    vector1[14] = 0;
+  }
+  if (LDR15 < 600) {
+    vector1[15] = 1;
+  } else {
+    vector1[15] = 0;
+  }
+  while (aux) {
+    LDR = analogRead(A0);
+    LDR1 = analogRead(A1);
+    LDR2 = analogRead(A2);
+    LDR3 = analogRead(A3);
+    LDR4 = analogRead(A4);
+    LDR5 = analogRead(A5);
+    LDR6 = analogRead(A6);
+    LDR7 = analogRead(A7);
+    LDR8 = analogRead(A8);
+    LDR9 = analogRead(A9);
+    LDR10 = analogRead(A10);
+    LDR11 = analogRead(A11);
+    LDR12 = analogRead(A12);
+    LDR13 = analogRead(A13);
+    LDR14 = analogRead(A14);
+    LDR15 = analogRead(A15);
+
+    if (LDR < 600) {
+      vector2[0] = 1;
+    } else {
+      vector2[0] = 0;
+    }
+    if (LDR1 < 600) {
+      vector2[1] = 1;
+    } else {
+      vector2[1] = 0;
+    }
+    if (LDR2 < 600) {
+      vector2[2] = 1;
+    } else {
+      vector2[2] = 0;
+    }
+    if (LDR3 < 600) {
+      vector2[3] = 1;
+    } else {
+      vector2[3] = 0;
+    }
+    if (LDR4 < 600) {
+      vector2[4] = 1;
+    } else {
+      vector2[4] = 0;
+    }
+    if (LDR5 < 600) {
+      vector2[5] = 1;
+    } else {
+      vector2[5] = 0;
+    }
+    if (LDR6 < 600) {
+      vector2[6] = 1;
+    } else {
+      vector2[6] = 0;
+    }
+    if (LDR7 < 600) {
+      vector2[7] = 1;
+    } else {
+      vector2[7] = 0;
+    }
+    if (LDR8 < 600) {
+      vector2[8] = 1;
+    } else {
+      vector2[8] = 0;
+    }
+    if (LDR9 < 600) {
+      vector2[9] = 1;
+    } else {
+      vector2[9] = 0;
+    }
+    if (LDR10 < 600) {
+      vector2[10] = 1;
+    } else {
+      vector2[10] = 0;
+    }
+    if (LDR11 < 600) {
+      vector2[11] = 1;
+    } else {
+      vector2[11] = 0;
+    }
+    if (LDR12 < 600) {
+      vector2[12] = 1;
+    } else {
+      vector2[12] = 0;
+    }
+    if (LDR13 < 600) {
+      vector2[13] = 1;
+    } else {
+      vector2[13] = 0;
+    }
+    if (LDR14 < 600) {
+      vector2[14] = 1;
+    } else {
+      vector2[14] = 0;
+    }
+    if (LDR15 < 600) {
+      vector2[15] = 1;
+    } else {
+      vector2[15] = 0;
+    }
+    for (int i = 0 ; i < 16; i++) {
+      /*Serial1.print(i);
+      Serial1.print(". ");
+      Serial1.println(vector2[i]);
+      Serial1.println("*********");
+      Serial1.print(i);
+      Serial1.print(". ");
+      Serial1.println(vector1[i]);*/
+      if (vector1[i] != vector2[i]) {
+        aux = false;
+        break;
+      }
+    }
+  }
+  for (int i = 0 ; i < 8; i++) {
+    if (vector2[i]) {
+      mc.setLed(0, 0, i, true);
+    }
+  }
+  for (int i = 8 ; i < 16; i++) {
+    if (vector2[i]) {
+      mc.setLed(0, 1, i, true);
+    }
+  }
+  delay(5000);
 }
