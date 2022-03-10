@@ -259,6 +259,7 @@ void loop() {
         lcd.print("Salida");
         lcd.setCursor(0, 1);
         lcd.print("Administrador");
+        tenSeconds = 12;
       }
     }
   }
@@ -475,15 +476,6 @@ void StringToEEPROM(String str) {
   for (int i = 0; i < len; i++)
     EEPROM.write(punteroEE + i, str[i]);
   punteroEE = punteroEE + len;
-}
-
-String readStringFromEEPROM(int offset) {
-  int len = EEPROM.read(offset);
-  int i;
-  char data[len + 1];
-  for (i = 16; i < punteroEE; i++)
-    data[i] = EEPROM.read(offset + i);
-  return String(data);
 }
 
 
