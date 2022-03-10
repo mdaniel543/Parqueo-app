@@ -123,17 +123,17 @@ void setup() {
     Serial1.println();
     }*/
 
-  for (int i = 0; i <= 50; i++) {
+  /*for (int i = 0; i <= 50; i++) {
     EEPROM.write(i, 255); /// para resetear la EEProm
-  }
+    }*/
 
-  for (int i = 0; i <= 15; i++) {
+  /*for (int i = 0; i <= 15; i++) {
     EEPROM.write(i, 0); /// para resetear la EEProm
-  }
+    }
 
-  for (int i = 16; i <= 100; i++) {
+    for (int i = 16; i <= 100; i++) {
     EEPROM.write(i, 255); /// para resetear la EEProm
-  }
+    }*/
 
   mc.shutdown(0, false);
   mc.setIntensity(0, 15);
@@ -225,13 +225,8 @@ void loop() {
         lcd.print("con Exito");
         delay(2000);
       }
-      else if (entrada == 's') { /// salida
+      else if (entrada == 's') { /// salida del parqueo
         if (parqueado) {
-          lcd.clear();
-          lcd.setCursor(0, 0);
-          lcd.print("Salida del");
-          lcd.setCursor(0, 1);
-          lcd.print("Parqueo");
           EEPROM.write(EEPROM.read(punteroIni + 1) - 1, 0);
           EEPROM.write(punteroIni + 1, 0);
           revisarLeds();
@@ -242,9 +237,28 @@ void loop() {
           while (estado == 2) {
             motor2();
           }
+          lcd.clear();
+          lcd.setCursor(0, 0);
+          lcd.print("Salida del");
+          lcd.setCursor(0, 1);
+          lcd.print("Parqueo");
         }
         actualizarMatrix();
         delay(1000);
+      }
+    }
+  } else if (tenSeconds == 15) {
+    if (Serial.available() > 0) {
+      entrada = Serial.read();
+      if (entrada == 'm') {
+        enlistar();
+        delay(1000);
+      } else if (entrada == 'e') {
+        lcd.clear();
+        lcd.setCursor(0, 0);
+        lcd.print("Salida");
+        lcd.setCursor(0, 1);
+        lcd.print("Administrador");
       }
     }
   }
@@ -253,6 +267,35 @@ void loop() {
     delay(10);// despues se agrega el 1000
   }
 
+}
+
+
+void enlistar() {
+  if (punteroEE == 16) {
+    return;
+  }
+  String cadena;
+  char aux;
+  String lista = "";
+  for (int i = 16; i < punteroEE; i++) {
+    if ('~' == char(EEPROM.read(i))) {
+      lista += EEPROM.read(i - 2);
+      lista += " -  ";
+      for (int j = i + 1; j < punteroEE; j++) {
+        aux = char(EEPROM.read(j));
+        if (aux == '*') {
+          lista += cadena;
+          lista += ",";
+          cadena = "";
+          break;
+        } else {
+          cadena += aux;
+        }
+      }
+    }
+  }
+  Serial.print(lista);
+  Serial1.print(lista);
 }
 
 void registro() {
@@ -319,11 +362,21 @@ void login() {
   bool existe = true;
   bool pas_us = true;
   int miPuntero = 0;
+  bool admin = false;
   while (Serial.available()) {
     aux = Serial.read();
     if (existe) {
       cadena += aux;
       if (aux == '*') {
+        if (cadena == "admin*") {
+          admin = true;
+          cadena = "";
+          continue;
+        }
+        if (admin){
+          if(cadena != "1234*")admin = false; 
+          break;
+        }
         if (pas_us) {
           if (!existeUsuario(cadena, miPuntero)) {
             existe = false;
@@ -340,7 +393,16 @@ void login() {
       }
     }
   }
-  if (existe) {
+  if (admin) {
+    Serial.print("admin");
+    lcd.setCursor(0, 0);
+    lcd.print("Bienvenido");
+    lcd.setCursor(0, 1);
+    lcd.print("Administrador");
+    tenSeconds = 15;
+    delay(500);
+  }
+  else if (existe) {
     Serial.print("b");
     Serial1.println("bien");
     lcd.setCursor(0, 0);
@@ -570,7 +632,7 @@ void parquearCarro() {
     lcd.print("Parqueado en");
     lcd.setCursor(7, 1);
     lcd.print(envio);
-    
+
   } else {
     //No hay espacios vacios
     Serial1.println("Vacio");
