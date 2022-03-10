@@ -64,8 +64,7 @@ bool parqueado;
 #define IN4  13
 int contadorMotor1 = 0;
 int contadorMotor2 = 0;
-int estado = 0;
-int sp = 9;
+int estado;
 
 
 // Secuencia de pasos (par máximo)
@@ -102,14 +101,13 @@ void setup() {
   pinMode(buz, OUTPUT);
   pinMode(led, OUTPUT);
   parqueado = false;
+  estado = 1;
 
-
-   Serial.begin(9600);
+  Serial.begin(9600);
   pinMode(IN1, OUTPUT);
   pinMode(IN2, OUTPUT);
   pinMode(IN3, OUTPUT);
   pinMode(IN4, OUTPUT);
-  pinMode(sp, INPUT);
 
   pinMode(31, OUTPUT);
   pinMode(32, OUTPUT);
@@ -125,18 +123,18 @@ void setup() {
     Serial1.println();
     }*/
 
-  /*for (int i = 0; i <= 50; i++) {
+  for (int i = 0; i <= 50; i++) {
     EEPROM.write(i, 255); /// para resetear la EEProm
-    }*/
+  }
 
-  /*for (int i = 0; i <= 15; i++) {
+  for (int i = 0; i <= 15; i++) {
     EEPROM.write(i, 0); /// para resetear la EEProm
   }
 
   for (int i = 16; i <= 100; i++) {
     EEPROM.write(i, 255); /// para resetear la EEProm
-  }*/
-  
+  }
+
   mc.shutdown(0, false);
   mc.setIntensity(0, 15);
   mc.clearDisplay(0);
@@ -225,15 +223,28 @@ void loop() {
         lcd.print("Salida");
         lcd.setCursor(0, 1);
         lcd.print("con Exito");
+        delay(2000);
+      }
+      else if (entrada == 's') { /// salida
         if (parqueado) {
+          lcd.clear();
+          lcd.setCursor(0, 0);
+          lcd.print("Salida del");
+          lcd.setCursor(0, 1);
+          lcd.print("Parqueo");
           EEPROM.write(EEPROM.read(punteroIni + 1) - 1, 0);
           EEPROM.write(punteroIni + 1, 0);
           revisarLeds();
-          motor2();
+          while (estado == 1) {
+            motor1();
+          }
           delay(5000);
-          motor1();
+          while (estado == 2) {
+            motor2();
+          }
         }
-        delay(2000);
+        actualizarMatrix();
+        delay(1000);
       }
     }
   }
@@ -265,7 +276,7 @@ void registro() {
             punteroIni = punteroEE;
             EEPROM.write(punteroEE, 1);//numero de veces que ingreso
             punteroEE++;
-            EEPROM.write(punteroEE, 0);//numero de parqueo por el momento 
+            EEPROM.write(punteroEE, 0);//numero de parqueo por el momento
             punteroEE++;
             EEPROM.put(punteroEE, '~');// inico de nombre de usuario
             punteroEE++;
@@ -461,7 +472,7 @@ void conectarse() {
           escuchar = false;
           tenSeconds++;
           String reg = "correcto," + (String)EEPROM.read(punteroIni + 1);
-          Serial.print("reg");
+          Serial.print(reg);
         } else {
           intentosToken++;
           if (intentosToken == 3) {
@@ -512,7 +523,15 @@ void parquearCarro() {
   lcd.print("Parqueando...");
   int temp =  EEPROM.read(punteroIni + 1);
   if (temp != 0) {
-    Serial.print(temp);
+
+    while (estado == 1) {
+      motor1();
+    }
+    delay(5000);
+    while (estado == 2) {
+      motor2();
+    }
+    revisarLeds();
     lcd.clear();
     lcd.setCursor(0, 0);
     lcd.print("Parqueado en ");
@@ -520,9 +539,8 @@ void parquearCarro() {
     lcd.print("Reservado: ");
     lcd.setCursor(11, 1);
     lcd.print(temp);
-    motor1();
-    delay(5000);
-    motor2();
+    Serial.print(temp);
+    parqueado = true;
     return;
   }
   for (int x = 0; x < 16; x++) {
@@ -532,6 +550,13 @@ void parquearCarro() {
     }
   }
   if (vacio) {
+    while (estado == 1) {
+      motor1();
+    }
+    delay(5000);
+    while (estado == 2) {
+      motor2();
+    }
     parqueado = true;
     int regreso = revisarLeds();
     int suma = regreso + 1;
@@ -545,9 +570,7 @@ void parquearCarro() {
     lcd.print("Parqueado en");
     lcd.setCursor(7, 1);
     lcd.print(envio);
-    motor1();
-    delay(5000);
-    motor2();
+    
   } else {
     //No hay espacios vacios
     Serial1.println("Vacio");
@@ -582,7 +605,6 @@ void reservar() {
     lcd.setCursor(7, 1);
     lcd.print(envio);
   } else {
-    //No hay espacios vacios
     Serial1.println("Vacio");
     Serial.print("no");
   }
@@ -813,7 +835,7 @@ void actualizarMatrix() {
   for (int i = 0 ; i < 8; i++) {
     if (1 == EEPROM.read(i)) {
       mc.setLed(0, 0, i, true);
-    }else{
+    } else {
       mc.setLed(0, 0, i, false);
     }
   }
@@ -821,7 +843,7 @@ void actualizarMatrix() {
     if (1 == EEPROM.read(i)) {
       mc.setLed(0, 1, i - 8, true);
     }
-    else{
+    else {
       mc.setLed(0, 0, i, false);
     }
   }
@@ -843,7 +865,6 @@ void motor1() {
   }
 }
 void motor2() {
-  
   digitalWrite(31, LOW);
   digitalWrite(32, LOW);
   digitalWrite(33, LOW);
@@ -868,8 +889,8 @@ void motor2() {
   digitalWrite(34, LOW);
   delay(500);
   contadorMotor2++;
-  if(contadorMotor2 == 20){
-    estado =4;
+  if (contadorMotor2 == 20) {
+    estado = 1;
     contadorMotor2 = 0;
   }
 }
