@@ -313,8 +313,11 @@ void registro() {
       cadena += aux;
       if (aux == '*') {
         if (pas_us) {
-          if (limite > 8) existe = false;
-          else if (existeUsuario(cadena, inservible)) {
+          if (limite > 9){
+            existe = false;
+            continue;
+          } 
+          if (existeUsuario(cadena, inservible)) {
             existe = false;
           } else { // creo un nuevo usuario
             punteroIni = punteroEE;
@@ -330,7 +333,7 @@ void registro() {
             limite = 0;
           }
         } else {
-          if (limite > 5) existe = false;
+          if (limite > 6) existe = false;
           else StringToEEPROM(cadena);
         }
       }
