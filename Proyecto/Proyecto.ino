@@ -126,8 +126,8 @@ void setup() {
   /*for (int i = 0; i <= 50; i++) {
     EEPROM.write(i, 255); /// para resetear la EEProm
     }*/
-
-  /*for (int i = 0; i <= 15; i++) {
+/*
+  for (int i = 0; i <= 15; i++) {
     EEPROM.write(i, 0); /// para resetear la EEProm
     }
 
@@ -226,7 +226,7 @@ void loop() {
         delay(2000);
       }
       else if (entrada == 's') { /// salida del parqueo
-        if (parqueado) {
+        
           EEPROM.write(EEPROM.read(punteroIni + 1) - 1, 0);
           EEPROM.write(punteroIni + 1, 0);
           revisarLeds();
@@ -242,7 +242,7 @@ void loop() {
           lcd.print("Salida del");
           lcd.setCursor(0, 1);
           lcd.print("Parqueo");
-        }
+        
         actualizarMatrix();
         delay(1000);
       }
@@ -309,14 +309,17 @@ void registro() {
   while (Serial.available()) {
     aux = Serial.read();
     if (existe) {
-      limite ++;
+      limite++;
       cadena += aux;
+      delay(100);
       if (aux == '*') {
         if (pas_us) {
           if (limite > 9){
             existe = false;
+            Serial1.println(limite);
             continue;
           } 
+          
           if (existeUsuario(cadena, inservible)) {
             existe = false;
           } else { // creo un nuevo usuario
