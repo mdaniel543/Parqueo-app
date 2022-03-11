@@ -265,7 +265,7 @@ void loop() {
   }
   else if (tenSeconds < 10) { /// solo es un contador
     tenSeconds++;
-    delay(10);// despues se agrega el 1000
+    delay(1000);// despues se agrega el 1000
   }
 
 }
